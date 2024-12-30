@@ -65,36 +65,53 @@
         <h1>Live TV Channels</h1>
     </div>
 
-    <div class="container">
+    <div class="container" id="channels-container">
         <!-- Dynamic Channel Cards -->
     </div>
 
     <script>
-        const channels = [
-            {
-                name: "TOFFEE Sports",
-                logo: "https://images.toffeelive.com/images/program/19779/logo/240x240/mobile_logo_975410001725875598.png",
-                link: "https://bldcmprod-cdn.toffeelive.com/cdn/live/sports_highlights/playlist.m3u8",
-                cookie: "Edge-Cache-Cookie=URLPrefix=aHR0cHM6Ly9ibGRjbXByb2QtY2RuLnRvZmZlZWxpdmUuY29tLw:Expires=1735734553:KeyName=prod_linear:Signature=lqvkn3a6VrfXm1dD2TkdYIqZVUy3RInRsy8mzCs_ISMiAlPpebCPkyclNztwMY6SREd2stuTkmJeojm2f1WgBA"
+        const channelsContainer = document.getElementById('channels-container');
+        const playlistURL = 'https://raw.githubusercontent.com/Yeadee/Toffee/refs/heads/main/toffee_ns_player.m3u';
+
+        async function loadChannels() {
+            try {
+                const response = await fetch(playlistURL);
+                const text = await response.text();
+                const lines = text.split('\n');
+
+                let channel = {};
+                lines.forEach(line => {
+                    if (line.startsWith('#EXTINF:')) {
+                        const name = line.split(',')[1]?.trim();
+                        channel.name = name;
+                    } else if (line.startsWith('http')) {
+                        channel.link = line.trim();
+                        if (channel.name && channel.link) {
+                            createChannelCard(channel);
+                            channel = {};
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading channels:', error);
             }
-        ];
+        }
 
-        const container = document.querySelector('.container');
-
-        channels.forEach(channel => {
+        function createChannelCard(channel) {
             const card = document.createElement('div');
             card.className = 'card';
 
             card.innerHTML = `
-                <img src="${channel.logo}" alt="${channel.name}">
                 <div class="card-body">
                     <h2 class="card-title">${channel.name}</h2>
-                    <a class="card-link" href="player.html?name=${encodeURIComponent(channel.name)}&link=${encodeURIComponent(channel.link)}&cookie=${encodeURIComponent(channel.cookie)}">Watch Now</a>
+                    <a class="card-link" href="player.html?name=${encodeURIComponent(channel.name)}&link=${encodeURIComponent(channel.link)}">Watch Now</a>
                 </div>
             `;
 
-            container.appendChild(card);
-        });
+            channelsContainer.appendChild(card);
+        }
+
+        loadChannels();
     </script>
 
 </body>
