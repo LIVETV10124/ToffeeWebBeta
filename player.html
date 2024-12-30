@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Player</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -38,10 +39,7 @@
         <h1 id="channel-name">Loading...</h1>
     </div>
     <div class="player-container">
-        <video id="video-player" controls autoplay>
-            <source id="video-source" type="application/vnd.apple.mpegurl">
-            Your browser does not support the video tag.
-        </video>
+        <video id="video-player" controls autoplay></video>
     </div>
 
     <script>
@@ -54,18 +52,30 @@
         // Set channel name
         document.getElementById('channel-name').textContent = channelName || 'Channel';
 
-        // Set video source
-        const videoSource = document.getElementById('video-source');
-        videoSource.src = playlistLink;
-
         // Add cookie if required
         if (cookie) {
             document.cookie = decodeURIComponent(cookie);
         }
 
-        // Load video
-        const videoPlayer = document.getElementById('video-player');
-        videoPlayer.load();
+        // Initialize HLS.js
+        const video = document.getElementById('video-player');
+
+        if (Hls.isSupported()) {
+            const hls = new Hls();
+            hls.loadSource(playlistLink);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, function () {
+                video.play();
+            });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            // For browsers with native HLS support (like Safari)
+            video.src = playlistLink;
+            video.addEventListener('loadedmetadata', function () {
+                video.play();
+            });
+        } else {
+            alert('Your browser does not support HLS playback.');
+        }
     </script>
 </body>
 </html>
