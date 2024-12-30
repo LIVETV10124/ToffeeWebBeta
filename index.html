@@ -7,112 +7,101 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
             margin: 0;
             padding: 0;
-        }
-        .header {
-            background-color: #333;
-            color: #fff;
-            padding: 15px;
-            text-align: center;
+            background-color: #f4f4f9;
         }
         .container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 15px;
-            padding: 15px;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px;
         }
         .card {
-            background-color: #fff;
+            background: white;
+            border: 1px solid #ddd;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             overflow: hidden;
-            transition: transform 0.2s;
-        }
-        .card:hover {
-            transform: translateY(-5px);
+            cursor: pointer;
+            text-align: center;
         }
         .card img {
             width: 100%;
-            height: 200px;
+            height: 150px;
             object-fit: cover;
         }
-        .card-body {
-            padding: 15px;
-        }
-        .card-title {
-            font-size: 1.2em;
-            margin: 0 0 10px;
-        }
-        .card-link {
-            display: inline-block;
-            background-color: #007BFF;
-            color: #fff;
-            padding: 10px 15px;
-            text-decoration: none;
-            border-radius: 4px;
-            transition: background-color 0.2s;
-        }
-        .card-link:hover {
-            background-color: #0056b3;
+        .card h3 {
+            margin: 10px 0;
+            padding: 0 10px;
+            font-size: 1.1em;
         }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <h1>Live TV Channels</h1>
-    </div>
-
-    <div class="container" id="channels-container">
-        <!-- Dynamic Channel Cards -->
-    </div>
+    <h1 style="text-align: center; padding: 20px;">Live TV Channels</h1>
+    <div class="container" id="channels-container"></div>
 
     <script>
-        const channelsContainer = document.getElementById('channels-container');
-        const playlistURL = 'https://raw.githubusercontent.com/Yeadee/Toffee/refs/heads/main/toffee_ns_player.m3u';
+        const m3uUrl = "https://raw.githubusercontent.com/Yeadee/Toffee/refs/heads/main/toffee_ns_player.m3u";
 
         async function loadChannels() {
-            try {
-                const response = await fetch(playlistURL);
-                const text = await response.text();
-                const lines = text.split('\n');
+            const response = await fetch(m3uUrl);
+            const m3uData = await response.text();
+            const channels = parseM3U(m3uData);
 
-                let channel = {};
-                lines.forEach(line => {
-                    if (line.startsWith('#EXTINF:')) {
-                        const name = line.split(',')[1]?.trim();
-                        channel.name = name;
-                    } else if (line.startsWith('http')) {
-                        channel.link = line.trim();
-                        if (channel.name && channel.link) {
-                            createChannelCard(channel);
-                            channel = {};
-                        }
-                    }
+            const container = document.getElementById('channels-container');
+            channels.forEach(channel => {
+                const card = document.createElement('div');
+                card.className = 'card';
+
+                const img = document.createElement('img');
+                img.src = channel.logo || 'https://via.placeholder.com/200x150?text=No+Image';
+                card.appendChild(img);
+
+                const title = document.createElement('h3');
+                title.textContent = channel.name;
+                card.appendChild(title);
+
+                card.addEventListener('click', () => {
+                    document.cookie = `channelUrl=${encodeURIComponent(channel.link)}; path=/`;
+                    document.cookie = `channelCookie=${channel.cookie || ''}; path=/`;
+                    window.location.href = 'player.html';
                 });
-            } catch (error) {
-                console.error('Error loading channels:', error);
-            }
+
+                container.appendChild(card);
+            });
         }
 
-        function createChannelCard(channel) {
-            const card = document.createElement('div');
-            card.className = 'card';
+        function parseM3U(data) {
+            const lines = data.split('\\n');
+            const channels = [];
+            let currentChannel = {};
 
-            card.innerHTML = `
-                <div class="card-body">
-                    <h2 class="card-title">${channel.name}</h2>
-                    <a class="card-link" href="player.html?name=${encodeURIComponent(channel.name)}&link=${encodeURIComponent(channel.link)}">Watch Now</a>
-                </div>
-            `;
+            lines.forEach(line => {
+                if (line.startsWith('#EXTINF:')) {
+                    const nameMatch = line.match(/,(.+)/);
+                    const logoMatch = line.match(/tvg-logo="(.*?)"/);
+                    currentChannel = {
+                        name: nameMatch ? nameMatch[1] : 'Unknown Channel',
+                        logo: logoMatch ? logoMatch[1] : null,
+                        link: '',
+                        cookie: ''
+                    };
+                } else if (line.startsWith('#EXTGRP:')) {
+                    const cookieMatch = line.match(/cookie="(.*?)"/);
+                    currentChannel.cookie = cookieMatch ? cookieMatch[1] : '';
+                } else if (line.trim() && !line.startsWith('#')) {
+                    currentChannel.link = line.trim();
+                    channels.push(currentChannel);
+                    currentChannel = {};
+                }
+            });
 
-            channelsContainer.appendChild(card);
+            return channels;
         }
 
         loadChannels();
     </script>
-
 </body>
 </html>
