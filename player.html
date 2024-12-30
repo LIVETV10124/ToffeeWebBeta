@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .player-container {
+            width: 100%;
+            max-width: 800px;
+            padding: 15px;
+        }
+        video {
+            width: 100%;
+            border: 2px solid #fff;
+            border-radius: 8px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 id="channel-name">Loading...</h1>
+    </div>
+    <div class="player-container">
+        <video id="video-player" controls autoplay>
+            <source id="video-source" type="application/vnd.apple.mpegurl">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <script>
+        // Extract URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const channelName = urlParams.get('name');
+        const playlistLink = urlParams.get('link');
+        const cookie = urlParams.get('cookie');
+
+        // Set channel name
+        document.getElementById('channel-name').textContent = channelName || 'Channel';
+
+        // Set video source
+        const videoSource = document.getElementById('video-source');
+        videoSource.src = playlistLink;
+
+        // Add cookie if required
+        if (cookie) {
+            document.cookie = decodeURIComponent(cookie);
+        }
+
+        // Load video
+        const videoPlayer = document.getElementById('video-player');
+        videoPlayer.load();
+    </script>
+</body>
+</html>
